@@ -4,6 +4,7 @@ import TextInput from "../components/TextInput";
 import Button from "../components/Button";
 import axiosInstance from "../config/axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from "jwt-decode";
 
 const LoginScene = ({navigation}) => {
 
@@ -22,14 +23,32 @@ const LoginScene = ({navigation}) => {
         axiosInstance.post("login_check",
             {username: username, password: password})
             .then(async (response) => {
-                    // console.log(response.data);
+                // lire token : voir si il contient "ROLE_SERVER" OU "ROLE_ADMIN"
+                let token = response.data.token;
+                const payload = jwtDecode(token);
+                let arrayRoles = payload.roles;
+
+                let ok = false
+                for(let i=0; i<arrayRoles.length; i++) {
+                    if("ROLE_SERVER" == arrayRoles[i] || "ROLE_ADMIN" == arrayRoles[i]) {
+                        ok = true
+                    }
+                }
+
+                if(ok){
                     //Storage du token
                     await storeData(response.data.token, "@JWT"),
-                        //Fin du login
-                        setIsChekingLogin(false),
-                        //Navigation sur un autre screen
-                        // navigation.replace("DefTab")
-                        navigation.navigate("DefTab")
+                    //Fin du login
+                    setIsChekingLogin(false)
+                    //Navigation sur un autre screen
+                    // navigation.replace("DefTab")
+                    navigation.navigate("DefTab")
+                }
+                else {
+                    Alert.alert("Erreur", "Mauvais crédentials");
+                }
+                setIsChekingLogin(false)
+
                 }
             )
             .catch(e => {

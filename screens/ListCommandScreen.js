@@ -19,6 +19,9 @@ const ListCommandScreen = ({navigation}) => {
     const[commands, setCommands] = useState([]);
     const[statuts, setStatuts] = useState([]);
 
+
+
+
     const listStatutAeffacerSiSelectionner = ["Refusé", "Client parti : avant livraison", "Client parti : après livraison", "Rupture de stock", "Réclamation", "Commande terminée"]
 
 /*    const associationStatut =
@@ -42,7 +45,7 @@ const ListCommandScreen = ({navigation}) => {
     const updateCommand =  async (idCommand, idStatut, nomStatut) => {
         try{
             // Premierement voir l'etat de la commande en bdd au cas ou celui ci ai bouger (autre serveur)
-            let statutCommandeEnBDD = await getStatutCommand(idCommand)
+            let statutCommandeEnBDD = await getStatutCommand(idCommand.idCommande)
             statutCommandeEnBDD = statutCommandeEnBDD[0]["libelleStatut"]
 
             // Si statut en bdd est dans liste a effacer alors ne pas faire de modif
@@ -53,7 +56,12 @@ const ListCommandScreen = ({navigation}) => {
                 let indexStatutChoisi = ordreEtat.indexOf(nomStatut)
                 if(indexStatutChoisi > indexStatutCommandeEnBDD){
                     // Faire la MAJ du statut
-                    await updateCommandAPI(idCommand, idStatut)
+                    await updateCommandAPI(idCommand.idCommande, idStatut)
+                    getEmailInToken().then(res => {
+                        createPriseEnCharge(idCommand.idCommande, res, nomStatut)
+                    });
+                  
+                    checkIfItemIsInDeleteList(nomStatut, idCommand)
                     Alert.alert("Commande mise à jour avec succès")
 
                 }
@@ -179,12 +187,8 @@ const ListCommandScreen = ({navigation}) => {
                     data={TabLibelleStatuts}
 
                     onSelect={(index) => {
-                        updateCommand(item.idCommande, findIdStatutWithLibelleStatut(index),index)
+                        updateCommand(item, findIdStatutWithLibelleStatut(index),index)
                         // Pour suivre quel est le personnel qui change les etats
-                        getEmailInToken().then(res => {
-                            createPriseEnCharge(item.idCommande, res, index)
-                        });
-                        checkIfItemIsInDeleteList(index, item)
 
 
                     }}
